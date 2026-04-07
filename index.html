@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Google Sheets Dashboard</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
+    <style>
+        body { font-family: sans-serif; margin: 20px; background-color: #f9f9f9; }
+        .container { max-width: 800px; margin: auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        h2 { text-align: center; color: #333; }
+        #lastUpdate { font-size: 12px; text-align: center; color: #888; margin-bottom: 20px; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>Dữ liệu Dashboard Tự động</h2>
+    <div id="lastUpdate">Đang tải dữ liệu...</div>
+    <canvas id="myChart"></canvas>
+</div>
+
+<script>
+    const csvUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRyrCR6Gjo4NQYZLC87atI6_-zNlumCz7lyJ7aAViZn7gr1IXVq3HzUEQQWbYGBxijnnZEMKIx0R0CA/pub?gid=1765307680&single=true&output=csv';
+    let myChart;
+
+    async function updateDashboard() {
+        Papa.parse(csvUrl, {
+            download: true,
+            header: true, // Giả định dòng đầu tiên là tiêu đề (Header)
+            complete: function(results) {
+                const data = results.data;
+                
+                // LẤY DỮ LIỆU: Giả định cột 1 là nhãn (Labels), cột 2 là giá trị (Values)
+                // Bạn có thể đổi tên 'Cột_Tên' và 'Cột_Số' theo đúng tiêu đề trong file Sheets của bạn
+                const labels = data.map(row => Object.values(row)[0]); 
+                const values = data.map(row => Object.values(row)[1]);
+
+                renderChart(labels, values);
+                document.getElementById('lastUpdate').innerText = "Cập nhật lần cuối: " + new Date().toLocaleTimeString();
+            }
+        });
+    }
+
+    function renderChart(labels, values) {
+        const ctx = document.getElementById('myChart').getContext('2d');
+        
+        if (myChart) {
+            myChart.destroy(); // Xóa biểu đồ cũ để vẽ mới khi dữ liệu thay đổi
+        }
+
+        myChart = new Chart(ctx, {
+            type: 'bar', // Bạn có thể thay bằng 'line', 'pie', 'doughnut'
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: 'Số liệu thực tế',
+                    data: values,
+                    backgroundColor: 'rgba(54, 162, 235, 0.6)',
+                    borderColor: 'rgba(54, 162, 235, 1)',
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                scales: {
+                    y: { beginAtZero: true }
+                }
+            }
+        });
+    }
+
+    // Chạy lần đầu
+    updateDashboard();
+
+    // Tự động cập nhật mỗi 5 phút (300.000 ms)
+    setInterval(updateDashboard, 300000);
+</script>
+
+</body>
+</html>
