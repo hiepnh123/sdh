@@ -24,55 +24,20 @@
     const csvUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRyrCR6Gjo4NQYZLC87atI6_-zNlumCz7lyJ7aAViZn7gr1IXVq3HzUEQQWbYGBxijnnZEMKIx0R0CA/pub?gid=1765307680&single=true&output=csv';
     let myChart;
 
-    function parseCompletion(value) {
-        if (!value) return NaN;
-        const normalized = String(value).replace('%', '').replace(',', '.').trim();
-        const num = Number.parseFloat(normalized);
-        return Number.isFinite(num) ? num : NaN;
-    }
-
     async function updateDashboard() {
         Papa.parse(csvUrl, {
             download: true,
-            header: false,
-            skipEmptyLines: true,
+            header: true, // Giả định dòng đầu tiên là tiêu đề (Header)
             complete: function(results) {
-                const rows = results.data;
-
-                // Google Sheet này có nhiều dòng tiêu đề ở trên, nên tìm đúng dòng header bảng dữ liệu.
-                const headerIndex = rows.findIndex(row =>
-                    String(row?.[0] || '').trim().toUpperCase() === 'STT' &&
-                    String(row?.[1] || '').toUpperCase().includes('TÊN CÔNG VIỆC')
-                );
-
-                if (headerIndex === -1) {
-                    document.getElementById('lastUpdate').innerText = 'Không tìm thấy header dữ liệu trong CSV.';
-                    renderChart([], []);
-                    return;
-                }
-
-                const dataRows = rows.slice(headerIndex + 1);
-                const labels = [];
-                const values = [];
-
-                dataRows.forEach((row) => {
-                    const taskName = String(row?.[1] || '').trim();
-                    const completion = parseCompletion(row?.[10]); // Cột "MỨC ĐỘ HOÀN THÀNH"
-
-                    if (!taskName || !Number.isFinite(completion)) {
-                        return;
-                    }
-
-                    labels.push(taskName);
-                    values.push(completion);
-                });
+                const data = results.data;
+                
+                // LẤY DỮ LIỆU: Giả định cột 1 là nhãn (Labels), cột 2 là giá trị (Values)
+                // Bạn có thể đổi tên 'Cột_Tên' và 'Cột_Số' theo đúng tiêu đề trong file Sheets của bạn
+                const labels = data.map(row => Object.values(row)[0]); 
+                const values = data.map(row => Object.values(row)[1]);
 
                 renderChart(labels, values);
                 document.getElementById('lastUpdate').innerText = "Cập nhật lần cuối: " + new Date().toLocaleTimeString();
-            },
-            error: function(err) {
-                console.error(err);
-                document.getElementById('lastUpdate').innerText = 'Lỗi tải dữ liệu CSV.';
             }
         });
     }
@@ -99,15 +64,7 @@
             options: {
                 responsive: true,
                 scales: {
-                    y: {
-                        beginAtZero: true,
-                        max: 100,
-                        ticks: {
-                            callback: function(value) {
-                                return value + '%';
-                            }
-                        }
-                    }
+                    y: { beginAtZero: true }
                 }
             }
         });
