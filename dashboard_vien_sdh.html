@@ -1,0 +1,758 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dashboard – Viện Sau Đại Học</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #0d1117;
+  --surface: #161b22;
+  --surface2: #1c2330;
+  --border: #30363d;
+  --text: #e6edf3;
+  --text-muted: #8b949e;
+  /* TS accent = đỏ cam */
+  --ts-accent: #f78166;
+  --ts-accent-dim: rgba(247,129,102,0.15);
+  /* ThS accent = xanh lam */
+  --ths-accent: #58a6ff;
+  --ths-accent-dim: rgba(88,166,255,0.15);
+  /* status colors */
+  --done: #3fb950;
+  --inprogress: #58a6ff;
+  --pending: #d29922;
+  --notstarted: #6e7681;
+  --overdue: #f78166;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Be Vietnam Pro',sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
+
+/* ═══ HEADER ═══ */
+.header{
+  background:linear-gradient(135deg,#0d1117,#161b22 60%,#1a2030);
+  border-bottom:1px solid var(--border);
+  padding:16px 28px;
+  display:flex;align-items:center;justify-content:space-between;
+  position:sticky;top:0;z-index:100;backdrop-filter:blur(10px);
+}
+.header-brand h1{
+  font-size:1.1rem;font-weight:800;letter-spacing:-.02em;
+  background:linear-gradient(90deg,#f78166,#58a6ff);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;
+}
+.header-brand p{font-size:.7rem;color:var(--text-muted);font-family:'JetBrains Mono',monospace;margin-top:2px}
+.upload-area{display:flex;align-items:center;gap:10px}
+.upload-btn{
+  background:linear-gradient(135deg,#238636,#196127);
+  color:#fff;border:none;padding:8px 18px;border-radius:8px;
+  font-family:'Be Vietnam Pro',sans-serif;font-weight:600;font-size:.8rem;
+  cursor:pointer;transition:all .2s;display:flex;align-items:center;gap:7px;
+}
+.upload-btn:hover{transform:translateY(-1px);box-shadow:0 4px 16px rgba(35,134,54,.4)}
+.upload-btn svg{width:14px;height:14px;flex-shrink:0}
+#fileInput{display:none}
+.upload-meta{font-size:.7rem;color:var(--text-muted);font-family:'JetBrains Mono',monospace;text-align:right;line-height:1.6}
+
+/* ═══ TABS ═══ */
+.tab-nav{
+  display:flex;border-bottom:1px solid var(--border);
+  background:var(--surface);position:sticky;top:61px;z-index:99;
+}
+.tab-btn{
+  padding:13px 28px;font-size:.85rem;font-weight:700;cursor:pointer;
+  border:none;background:transparent;color:var(--text-muted);
+  border-bottom:3px solid transparent;transition:all .2s;display:flex;align-items:center;gap:8px;
+}
+.tab-btn:hover{color:var(--text)}
+.tab-btn.active-ts{color:var(--ts-accent);border-bottom-color:var(--ts-accent)}
+.tab-btn.active-ths{color:var(--ths-accent);border-bottom-color:var(--ths-accent)}
+.tab-pill{
+  font-size:.65rem;font-weight:700;padding:2px 7px;border-radius:20px;
+  font-family:'JetBrains Mono',monospace;
+}
+.tab-btn.active-ts .tab-pill{background:var(--ts-accent-dim);color:var(--ts-accent)}
+.tab-btn.active-ths .tab-pill{background:var(--ths-accent-dim);color:var(--ths-accent)}
+.tab-btn:not(.active-ts):not(.active-ths) .tab-pill{background:rgba(139,148,158,.1);color:var(--text-muted)}
+
+.tab-panel{display:none}
+.tab-panel.active{display:block}
+
+/* ═══ CONTAINER ═══ */
+.container{padding:24px 28px;max-width:1800px;margin:0 auto}
+
+/* ═══ STATS GRID ═══ */
+.stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(155px,1fr));gap:14px;margin-bottom:24px}
+.stat-card{
+  background:var(--surface);border:1px solid var(--border);border-radius:12px;
+  padding:16px 18px;position:relative;overflow:hidden;
+  transition:border-color .2s,transform .2s;
+}
+.stat-card:hover{transform:translateY(-2px)}
+.stat-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:var(--c,#8b949e)}
+.stat-card .lbl{font-size:.67rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:.08em;font-weight:600;margin-bottom:6px}
+.stat-card .val{font-size:1.9rem;font-weight:800;font-family:'JetBrains Mono',monospace;color:var(--c,#8b949e);line-height:1}
+.stat-card .sub{font-size:.66rem;color:var(--text-muted);margin-top:5px}
+
+/* ═══ CHARTS ROW ═══ */
+.charts-row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:18px;margin-bottom:22px}
+.chart-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:18px}
+.chart-card h3{font-size:.72rem;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:14px}
+.bar-chart{display:flex;flex-direction:column;gap:9px}
+.bar-row{display:flex;align-items:center;gap:9px}
+.bar-label{font-size:.7rem;color:var(--text);width:88px;flex-shrink:0;text-align:right}
+.bar-wrap{flex:1;background:var(--surface2);border-radius:4px;height:19px;overflow:hidden}
+.bar-fill{height:100%;border-radius:4px;transition:width .6s cubic-bezier(.4,0,.2,1);display:flex;align-items:center;padding-left:7px;font-size:.66rem;font-weight:700;color:rgba(0,0,0,.75);font-family:'JetBrains Mono',monospace}
+.bar-cnt{font-size:.7rem;color:var(--text-muted);width:22px;text-align:right;font-family:'JetBrains Mono',monospace}
+
+/* ring */
+.ring-wrap{display:flex;flex-direction:column;align-items:center;gap:14px}
+.ring-container{position:relative}
+.ring-center{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);text-align:center}
+.ring-pct{font-size:1.7rem;font-weight:800;font-family:'JetBrains Mono',monospace}
+.ring-sub{font-size:.62rem;color:var(--text-muted)}
+.ring-legend{display:flex;flex-wrap:wrap;gap:7px;justify-content:center}
+.ring-item{display:flex;align-items:center;gap:5px;font-size:.67rem;color:var(--text-muted)}
+.ring-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
+
+/* ═══ FILTERS ═══ */
+.filters{
+  background:var(--surface);border:1px solid var(--border);border-radius:12px;
+  padding:14px 18px;margin-bottom:20px;display:flex;flex-wrap:wrap;gap:11px;align-items:center;
+}
+.fg{display:flex;align-items:center;gap:7px}
+.fg label{font-size:.68rem;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.06em;white-space:nowrap}
+select.fs,input.fs{
+  background:var(--surface2);border:1px solid var(--border);color:var(--text);
+  border-radius:7px;padding:5px 10px;font-size:.78rem;font-family:'Be Vietnam Pro',sans-serif;
+  outline:none;transition:border-color .2s;
+}
+input.fs{width:190px}
+select.fs:focus,input.fs:focus{border-color:var(--ths-accent)}
+.reset-btn{
+  background:transparent;border:1px solid var(--border);color:var(--text-muted);
+  padding:5px 13px;border-radius:7px;font-size:.75rem;cursor:pointer;
+  font-family:'Be Vietnam Pro',sans-serif;transition:all .2s;
+}
+.reset-btn:hover{border-color:var(--ts-accent);color:var(--ts-accent)}
+
+/* ═══ TABLE ═══ */
+.table-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;overflow:hidden}
+.table-hdr{
+  padding:14px 18px;border-bottom:1px solid var(--border);
+  display:flex;align-items:center;justify-content:space-between;
+}
+.table-hdr h3{font-size:.78rem;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.08em}
+.tbl-count{font-size:.7rem;font-family:'JetBrains Mono',monospace;padding:3px 10px;border-radius:20px}
+.tbl-count-ts{background:var(--ts-accent-dim);color:var(--ts-accent)}
+.tbl-count-ths{background:var(--ths-accent-dim);color:var(--ths-accent)}
+.table-wrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:.78rem}
+th{
+  background:var(--surface2);padding:10px 13px;text-align:left;
+  font-size:.65rem;font-weight:700;text-transform:uppercase;letter-spacing:.07em;
+  color:var(--text-muted);border-bottom:1px solid var(--border);
+  white-space:nowrap;cursor:pointer;user-select:none;transition:color .2s;
+}
+th:hover{color:var(--ths-accent)}
+td{padding:9px 13px;border-bottom:1px solid rgba(48,54,61,.5);vertical-align:top;max-width:260px}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:rgba(88,166,255,.03)}
+.task-name{font-weight:500;line-height:1.4}
+.task-stt{font-family:'JetBrains Mono',monospace;font-size:.7rem;color:var(--text-muted)}
+.task-date{font-family:'JetBrains Mono',monospace;font-size:.7rem;color:var(--text-muted);white-space:nowrap}
+.note-cell{font-size:.7rem;color:var(--text-muted);line-height:1.5;max-width:220px}
+
+/* badges */
+.badge{display:inline-block;padding:2px 8px;border-radius:20px;font-size:.66rem;font-weight:600;white-space:nowrap}
+.b-done{background:rgba(63,185,80,.15);color:var(--done)}
+.b-inprogress{background:rgba(88,166,255,.15);color:var(--inprogress)}
+.b-pending{background:rgba(210,153,34,.15);color:var(--pending)}
+.b-notstarted{background:rgba(110,118,129,.15);color:var(--notstarted)}
+.b-overdue{background:rgba(247,129,102,.15);color:var(--overdue)}
+.b-cao{background:rgba(247,129,102,.15);color:var(--ts-accent)}
+.b-thuong{background:rgba(88,166,255,.1);color:var(--ths-accent)}
+
+/* pct bar */
+.pct-bar{display:flex;align-items:center;gap:7px}
+.pct-track{flex:1;background:var(--surface2);border-radius:3px;height:5px;min-width:55px}
+.pct-fill{height:100%;border-radius:3px;transition:width .5s}
+.pct-txt{font-size:.68rem;font-family:'JetBrains Mono',monospace;color:var(--text-muted);width:30px;text-align:right}
+
+/* empty */
+.empty{text-align:center;padding:56px 20px;color:var(--text-muted)}
+.empty h3{font-size:.95rem;margin:14px 0 7px}
+.empty p{font-size:.8rem;line-height:1.7}
+.empty-icon{font-size:2.5rem;opacity:.35}
+
+/* toast */
+.toast{
+  position:fixed;bottom:24px;right:24px;
+  background:var(--surface2);border:1px solid var(--border);border-radius:10px;
+  padding:12px 18px;font-size:.8rem;color:var(--text);z-index:999;
+  transform:translateY(80px);opacity:0;transition:all .3s;
+}
+.toast.show{transform:translateY(0);opacity:1}
+.toast.ok{border-color:var(--done)}
+.toast.err{border-color:var(--overdue)}
+
+@media(max-width:900px){
+  .charts-row{grid-template-columns:1fr}
+  .container{padding:14px}
+  .header{padding:12px 14px;flex-wrap:wrap;gap:10px}
+  .stats-grid{grid-template-columns:repeat(3,1fr)}
+}
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<div class="header">
+  <div class="header-brand">
+    <h1>🎓 Viện Sau Đại Học – Dashboard Tiến độ</h1>
+    <p id="headerSub">Chưa tải file · ĐH Đại Nam</p>
+  </div>
+  <div class="upload-area">
+    <div class="upload-meta" id="uploadMeta"></div>
+    <button class="upload-btn" onclick="document.getElementById('fileInput').click()">
+      <svg viewBox="0 0 16 16" fill="currentColor"><path d="M2 12.5A1.5 1.5 0 003.5 14h9A1.5 1.5 0 0014 12.5v-1a.5.5 0 00-1 0v1a.5.5 0 01-.5.5h-9a.5.5 0 01-.5-.5v-1a.5.5 0 00-1 0v1zm4.354-8.354a.5.5 0 00.707.707L8 3.707V10.5a.5.5 0 001 0V3.707l.939.946a.5.5 0 00.707-.707L8.354 2.146a.5.5 0 00-.708 0L6.354 4.146z"/></svg>
+      Tải file Excel (.xlsx)
+    </button>
+    <input type="file" id="fileInput" accept=".xlsx,.xls" onchange="handleFile(event)">
+  </div>
+</div>
+
+<!-- TABS -->
+<div class="tab-nav">
+  <button class="tab-btn active-ts" id="tab-ts" onclick="switchTab('ts')">
+    🎓 Đào tạo Tiến sĩ
+    <span class="tab-pill" id="pill-ts">TS</span>
+  </button>
+  <button class="tab-btn" id="tab-ths" onclick="switchTab('ths')">
+    📘 Đào tạo Thạc sĩ
+    <span class="tab-pill" id="pill-ths">Th.S</span>
+  </button>
+</div>
+
+<!-- ══════════ TAB: TIẾN SĨ ══════════ -->
+<div class="tab-panel active" id="panel-ts">
+  <div class="container">
+    <div class="stats-grid" id="ts-stats"></div>
+    <div class="charts-row">
+      <div class="chart-card"><h3>📌 Tình trạng</h3><div class="bar-chart" id="ts-status-chart"></div></div>
+      <div class="chart-card">
+        <h3>🎯 % Hoàn thành tổng thể</h3>
+        <div class="ring-wrap">
+          <div class="ring-container">
+            <svg width="148" height="148" viewBox="0 0 148 148">
+              <circle cx="74" cy="74" r="62" fill="none" stroke="#1c2330" stroke-width="13"/>
+              <circle id="ts-ring" cx="74" cy="74" r="62" fill="none" stroke="#3fb950" stroke-width="13"
+                stroke-linecap="round" stroke-dasharray="389.56" stroke-dashoffset="389.56"
+                transform="rotate(-90 74 74)" style="transition:stroke-dashoffset 1s cubic-bezier(.4,0,.2,1)"/>
+            </svg>
+            <div class="ring-center">
+              <div class="ring-pct" id="ts-ring-pct" style="color:#3fb950">—</div>
+              <div class="ring-sub">avg completion</div>
+            </div>
+          </div>
+          <div class="ring-legend" id="ts-ring-legend"></div>
+        </div>
+      </div>
+      <div class="chart-card"><h3>🔥 Mức độ ưu tiên</h3><div class="bar-chart" id="ts-prio-chart"></div></div>
+    </div>
+    <div class="filters">
+      <div class="fg"><label>🔍</label><input class="fs" type="text" id="ts-search" placeholder="Tìm tên công việc..." oninput="applyFilters('ts')"></div>
+      <div class="fg"><label>Tình trạng</label>
+        <select class="fs" id="ts-fstatus" onchange="applyFilters('ts')">
+          <option value="">Tất cả</option>
+          <option>Done</option><option>In progress</option><option>Pending</option><option>Not started</option><option>Overdue</option>
+        </select>
+      </div>
+      <div class="fg"><label>Ưu tiên</label>
+        <select class="fs" id="ts-fprio" onchange="applyFilters('ts')">
+          <option value="">Tất cả</option><option>Cao</option><option>Thường</option>
+        </select>
+      </div>
+      <div class="fg"><label>Nhân sự</label><select class="fs" id="ts-fns" onchange="applyFilters('ts')"><option value="">Tất cả</option></select></div>
+      <div class="fg"><label>Nhóm</label><select class="fs" id="ts-fgrp" onchange="applyFilters('ts')"><option value="">Tất cả</option></select></div>
+      <div class="fg"><label>Follow-up</label>
+        <select class="fs" id="ts-ffu" onchange="applyFilters('ts')">
+          <option value="">Tất cả</option><option>Yes</option><option>No</option>
+        </select>
+      </div>
+      <button class="reset-btn" onclick="resetFilters('ts')">↺ Reset</button>
+    </div>
+    <div class="table-card">
+      <div class="table-hdr">
+        <h3>📋 Danh sách công việc – Tiến sĩ</h3>
+        <span class="tbl-count tbl-count-ts" id="ts-tbl-count">0 công việc</span>
+      </div>
+      <div class="table-wrap">
+        <table><thead><tr>
+          <th onclick="sortT('ts','stt')">STT ↕</th>
+          <th onclick="sortT('ts','name')">Tên công việc ↕</th>
+          <th onclick="sortT('ts','group')">Nhóm ↕</th>
+          <th onclick="sortT('ts','nhansu')">Nhân sự ↕</th>
+          <th onclick="sortT('ts','priority')">Ưu tiên ↕</th>
+          <th onclick="sortT('ts','status')">Tình trạng ↕</th>
+          <th onclick="sortT('ts','start')">Bắt đầu ↕</th>
+          <th onclick="sortT('ts','end')">Kết thúc ↕</th>
+          <th onclick="sortT('ts','pct')">% Hoàn thành ↕</th>
+          <th>Follow-up</th>
+          <th>Hiện trạng / Ghi chú</th>
+        </tr></thead>
+        <tbody id="ts-tbody"></tbody></table>
+        <div id="ts-empty" class="empty">
+          <div class="empty-icon">📂</div>
+          <h3>Tải file Excel để bắt đầu</h3>
+          <p>Nhấn <strong>"Tải file Excel"</strong> ở góc trên bên phải<br>hoặc kéo thả file <code>.xlsx</code> vào cửa sổ trình duyệt.<br>Dashboard tự động đọc sheet <strong>TS</strong>.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════ TAB: THẠC SĨ ══════════ -->
+<div class="tab-panel" id="panel-ths">
+  <div class="container">
+    <div class="stats-grid" id="ths-stats"></div>
+    <div class="charts-row">
+      <div class="chart-card"><h3>📌 Tình trạng</h3><div class="bar-chart" id="ths-status-chart"></div></div>
+      <div class="chart-card">
+        <h3>🎯 % Hoàn thành tổng thể</h3>
+        <div class="ring-wrap">
+          <div class="ring-container">
+            <svg width="148" height="148" viewBox="0 0 148 148">
+              <circle cx="74" cy="74" r="62" fill="none" stroke="#1c2330" stroke-width="13"/>
+              <circle id="ths-ring" cx="74" cy="74" r="62" fill="none" stroke="#58a6ff" stroke-width="13"
+                stroke-linecap="round" stroke-dasharray="389.56" stroke-dashoffset="389.56"
+                transform="rotate(-90 74 74)" style="transition:stroke-dashoffset 1s cubic-bezier(.4,0,.2,1)"/>
+            </svg>
+            <div class="ring-center">
+              <div class="ring-pct" id="ths-ring-pct" style="color:#58a6ff">—</div>
+              <div class="ring-sub">avg completion</div>
+            </div>
+          </div>
+          <div class="ring-legend" id="ths-ring-legend"></div>
+        </div>
+      </div>
+      <div class="chart-card"><h3>🔥 Mức độ ưu tiên</h3><div class="bar-chart" id="ths-prio-chart"></div></div>
+    </div>
+    <div class="filters">
+      <div class="fg"><label>🔍</label><input class="fs" type="text" id="ths-search" placeholder="Tìm tên công việc..." oninput="applyFilters('ths')"></div>
+      <div class="fg"><label>Tình trạng</label>
+        <select class="fs" id="ths-fstatus" onchange="applyFilters('ths')">
+          <option value="">Tất cả</option>
+          <option>Done</option><option>In progress</option><option>Pending</option><option>Not started</option><option>Overdue</option>
+        </select>
+      </div>
+      <div class="fg"><label>Ưu tiên</label>
+        <select class="fs" id="ths-fprio" onchange="applyFilters('ths')">
+          <option value="">Tất cả</option><option>Cao</option><option>Thường</option>
+        </select>
+      </div>
+      <div class="fg"><label>Nhân sự</label><select class="fs" id="ths-fns" onchange="applyFilters('ths')"><option value="">Tất cả</option></select></div>
+      <div class="fg"><label>Nhóm</label><select class="fs" id="ths-fgrp" onchange="applyFilters('ths')"><option value="">Tất cả</option></select></div>
+      <div class="fg"><label>Follow-up</label>
+        <select class="fs" id="ths-ffu" onchange="applyFilters('ths')">
+          <option value="">Tất cả</option><option>Yes</option><option>No</option>
+        </select>
+      </div>
+      <button class="reset-btn" onclick="resetFilters('ths')">↺ Reset</button>
+    </div>
+    <div class="table-card">
+      <div class="table-hdr">
+        <h3>📋 Danh sách công việc – Thạc sĩ</h3>
+        <span class="tbl-count tbl-count-ths" id="ths-tbl-count">0 công việc</span>
+      </div>
+      <div class="table-wrap">
+        <table><thead><tr>
+          <th onclick="sortT('ths','stt')">STT ↕</th>
+          <th onclick="sortT('ths','name')">Tên công việc ↕</th>
+          <th onclick="sortT('ths','group')">Nhóm ↕</th>
+          <th onclick="sortT('ths','nhansu')">Nhân sự ↕</th>
+          <th onclick="sortT('ths','priority')">Ưu tiên ↕</th>
+          <th onclick="sortT('ths','status')">Tình trạng ↕</th>
+          <th onclick="sortT('ths','start')">Bắt đầu ↕</th>
+          <th onclick="sortT('ths','end')">Kết thúc ↕</th>
+          <th onclick="sortT('ths','pct')">% Hoàn thành ↕</th>
+          <th>Follow-up</th>
+          <th>Hiện trạng / Ghi chú</th>
+        </tr></thead>
+        <tbody id="ths-tbody"></tbody></table>
+        <div id="ths-empty" class="empty">
+          <div class="empty-icon">📂</div>
+          <h3>Tải file Excel để bắt đầu</h3>
+          <p>Nhấn <strong>"Tải file Excel"</strong> ở góc trên bên phải<br>hoặc kéo thả file <code>.xlsx</code> vào cửa sổ trình duyệt.<br>Dashboard tự động đọc sheet <strong>Th.S</strong>.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ═══════════════════════════════════════════
+// STATE
+// ═══════════════════════════════════════════
+const state = {
+  ts:  { tasks: [], sort: { col: '', asc: true } },
+  ths: { tasks: [], sort: { col: '', asc: true } },
+};
+let activeTab = 'ts';
+
+// ═══════════════════════════════════════════
+// TAB SWITCHING
+// ═══════════════════════════════════════════
+function switchTab(tab) {
+  activeTab = tab;
+  ['ts','ths'].forEach(t => {
+    document.getElementById('panel-'+t).classList.toggle('active', t === tab);
+    const btn = document.getElementById('tab-'+t);
+    btn.className = 'tab-btn' + (t === tab ? ' active-'+t : '');
+  });
+}
+
+// ═══════════════════════════════════════════
+// FILE HANDLING
+// ═══════════════════════════════════════════
+function handleFile(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = ev => {
+    try {
+      const wb = XLSX.read(new Uint8Array(ev.target.result), { type: 'array' });
+      let loaded = 0;
+
+      // Find TS sheet
+      const tsName = wb.SheetNames.find(n => n.trim().toUpperCase() === 'TS');
+      if (tsName) { parseSheet(wb.Sheets[tsName], 'ts'); loaded++; }
+
+      // Find Th.S sheet
+      const thsName = wb.SheetNames.find(n => n.trim().replace(/\s/g,'').toUpperCase() === 'TH.S' || n.trim().toUpperCase() === 'TH.S');
+      if (thsName) { parseSheet(wb.Sheets[thsName], 'ths'); loaded++; }
+
+      if (loaded === 0) { showToast('Không tìm thấy sheet "TS" hoặc "Th.S"!', 'err'); return; }
+
+      document.getElementById('headerSub').textContent = file.name + ' · ĐH Đại Nam';
+      document.getElementById('uploadMeta').textContent = 'Cập nhật: ' + new Date().toLocaleString('vi-VN');
+      showToast(`✅ Đã tải: ${file.name} (${loaded} sheet)`, 'ok');
+    } catch(err) { showToast('Lỗi đọc file: ' + err.message, 'err'); }
+  };
+  reader.readAsArrayBuffer(file);
+  e.target.value = '';
+}
+
+// ═══════════════════════════════════════════
+// PARSE SHEET
+// ═══════════════════════════════════════════
+function parseSheet(ws, key) {
+  const range = XLSX.utils.decode_range(ws['!ref']);
+  const gc = (r, c) => { const cell = ws[XLSX.utils.encode_cell({r,c})]; return cell ? cell.v : ''; };
+
+  // Find header row
+  let hdr = -1;
+  for (let r = range.s.r; r <= Math.min(range.e.r, 15); r++) {
+    for (let c = range.s.c; c <= range.e.c; c++) {
+      if (String(gc(r,c)).includes('TÊN CÔNG VIỆC')) { hdr = r; break; }
+    }
+    if (hdr >= 0) break;
+  }
+  if (hdr < 0) hdr = 4;
+
+  // Column mapping
+  let cm = { stt:0, name:1, desc:2, nhansu:3, priority:4, status:5, followup:6, start:7, end:8, pct:10, note:11 };
+  for (let c = range.s.c; c <= range.e.c; c++) {
+    const v = String(gc(hdr, c)).trim().toUpperCase();
+    if (v.includes('STT')) cm.stt = c;
+    else if (v.includes('TÊN CÔNG VIỆC')) cm.name = c;
+    else if (v.includes('MÔ TẢ')) cm.desc = c;
+    else if (v.includes('NHÂN SỰ')) cm.nhansu = c;
+    else if (v.includes('ƯU TIÊN') && !v.includes('HOÀN')) cm.priority = c;
+    else if (v.includes('TÌNH TRẠNG')) cm.status = c;
+    else if (v.includes('FOLLOW')) cm.followup = c;
+    else if (v.includes('BẮT ĐẦU')) cm.start = c;
+    else if (v.includes('KẾT THÚC')) cm.end = c;
+    else if (v.includes('HOÀN THÀNH') && v.includes('MỨC')) cm.pct = c;
+    else if (v.includes('HIỆN TRẠNG')) cm.note = c;
+  }
+
+  const tasks = [];
+  let group = '';
+
+  for (let r = hdr + 1; r <= range.e.r; r++) {
+    const stt  = String(gc(r, cm.stt)).trim();
+    const name = String(gc(r, cm.name)).trim();
+    if (!name || name === 'undefined' || name === '0') continue;
+
+    const statusRaw = String(gc(r, cm.status)).trim();
+    // Section/group header: has name but no status
+    if (!statusRaw) {
+      // only treat as group header if name looks meaningful
+      if (name.length > 2 && !/^0(\.0)?$/.test(name)) group = name.replace(/^\d+[\.\d]*\s+/, '').trim();
+      continue;
+    }
+
+    const pctRaw   = parseFloat(gc(r, cm.pct)) || 0;
+    const startS   = parseFloat(gc(r, cm.start));
+    const endS     = parseFloat(gc(r, cm.end));
+
+    tasks.push({
+      stt:      stt || '—',
+      name,
+      group,
+      nhansu:   String(gc(r, cm.nhansu)).trim() || '—',
+      priority: String(gc(r, cm.priority)).trim(),
+      status:   statusRaw,
+      followup: String(gc(r, cm.followup)).trim(),
+      start:    startS > 1000 ? startS : null,
+      end:      endS   > 1000 ? endS   : null,
+      pct:      Math.min(1, Math.max(0, pctRaw)),
+      note:     String(gc(r, cm.note)).trim(),
+    });
+  }
+
+  state[key].tasks = tasks;
+  state[key].sort  = { col:'', asc:true };
+  buildFilters(key);
+  applyFilters(key);
+
+  // Update pill counts
+  document.getElementById('pill-'+key).textContent = tasks.length;
+}
+
+// ═══════════════════════════════════════════
+// FILTERS
+// ═══════════════════════════════════════════
+function buildFilters(key) {
+  const tasks = state[key].tasks;
+  const nsSet  = [...new Set(tasks.map(t=>t.nhansu).filter(v=>v&&v!=='—'))];
+  const grpSet = [...new Set(tasks.map(t=>t.group).filter(Boolean))];
+
+  const ns  = document.getElementById(key+'-fns');
+  ns.innerHTML  = '<option value="">Tất cả</option>' + nsSet.map(v=>`<option>${v}</option>`).join('');
+  const grp = document.getElementById(key+'-fgrp');
+  grp.innerHTML = '<option value="">Tất cả</option>' + grpSet.map(v=>`<option value="${v}">${v.substring(0,40)}${v.length>40?'…':''}</option>`).join('');
+}
+
+function applyFilters(key) {
+  const search   = (document.getElementById(key+'-search').value||'').toLowerCase();
+  const fstatus  = document.getElementById(key+'-fstatus').value;
+  const fprio    = document.getElementById(key+'-fprio').value;
+  const fns      = document.getElementById(key+'-fns').value;
+  const fgrp     = document.getElementById(key+'-fgrp').value;
+  const ffu      = document.getElementById(key+'-ffu').value;
+  const { col, asc } = state[key].sort;
+
+  let list = state[key].tasks.filter(t => {
+    if (search  && !t.name.toLowerCase().includes(search) && !t.note.toLowerCase().includes(search)) return false;
+    if (fstatus && t.status   !== fstatus) return false;
+    if (fprio   && t.priority !== fprio)   return false;
+    if (fns     && t.nhansu   !== fns)     return false;
+    if (fgrp    && t.group    !== fgrp)    return false;
+    if (ffu     && t.followup !== ffu)     return false;
+    return true;
+  });
+
+  if (col) list.sort((a,b) => {
+    const va = a[col], vb = b[col];
+    if (typeof va === 'number' && typeof vb === 'number') return asc ? va-vb : vb-va;
+    return asc ? String(va).localeCompare(String(vb),'vi') : String(vb).localeCompare(String(va),'vi');
+  });
+
+  renderStats(key, list);
+  renderCharts(key, list);
+  renderTable(key, list);
+}
+
+function sortT(key, col) {
+  const s = state[key].sort;
+  if (s.col === col) s.asc = !s.asc; else { s.col = col; s.asc = true; }
+  applyFilters(key);
+}
+
+function resetFilters(key) {
+  ['search','fstatus','fprio','fns','fgrp','ffu'].forEach(id => {
+    const el = document.getElementById(key+'-'+id);
+    if (el.tagName === 'INPUT') el.value = ''; else el.value = '';
+  });
+  state[key].sort = { col:'', asc:true };
+  applyFilters(key);
+}
+
+// ═══════════════════════════════════════════
+// RENDER STATS
+// ═══════════════════════════════════════════
+function renderStats(key, tasks) {
+  const n      = tasks.length;
+  const done   = tasks.filter(t=>t.status==='Done').length;
+  const inp    = tasks.filter(t=>t.status==='In progress').length;
+  const pend   = tasks.filter(t=>t.status==='Pending').length;
+  const other  = tasks.filter(t=>t.status==='Overdue'||t.status==='Not started').length;
+  const avg    = n ? Math.round(tasks.reduce((s,t)=>s+t.pct,0)/n*100) : 0;
+  const high   = tasks.filter(t=>t.priority==='Cao').length;
+  const fu     = tasks.filter(t=>t.followup==='Yes').length;
+  const donePct = n ? Math.round(done/n*100) : 0;
+
+  const accent = key==='ts' ? '#f78166' : '#58a6ff';
+  const cards = [
+    { lbl:'Tổng công việc', val:n,       sub:'Tất cả đầu việc',       c:'#8b949e' },
+    { lbl:'Hoàn thành',     val:done,    sub:donePct+'% tổng số',      c:'#3fb950' },
+    { lbl:'Đang thực hiện', val:inp,     sub:'In progress',            c:'#58a6ff' },
+    { lbl:'Pending',        val:pend,    sub:'Đang chờ xử lý',         c:'#d29922' },
+    { lbl:'Overdue/Chưa bắt đầu', val:other, sub:'Cần chú ý',         c:'#f78166' },
+    { lbl:'Hoàn thành TB',  val:avg+'%', sub:'Trung bình % hoàn thành',c:'#d29922' },
+    { lbl:'Ưu tiên Cao',    val:high,    sub:'Mức độ ưu tiên cao',     c:accent    },
+    { lbl:'Follow-up',      val:fu,      sub:'Cần theo dõi tiếp',      c:'#f0883e' },
+  ];
+  document.getElementById(key+'-stats').innerHTML = cards.map(cd =>
+    `<div class="stat-card" style="--c:${cd.c}">
+      <div class="lbl">${cd.lbl}</div>
+      <div class="val">${cd.val}</div>
+      <div class="sub">${cd.sub}</div>
+    </div>`
+  ).join('');
+
+  // Ring
+  const circ = 389.56;
+  const ringEl = document.getElementById(key+'-ring');
+  ringEl.style.strokeDashoffset = circ - (avg/100)*circ;
+  const rc = avg>=70?'#3fb950':avg>=40?'#d29922':'#f78166';
+  ringEl.setAttribute('stroke', rc);
+  const rp = document.getElementById(key+'-ring-pct');
+  rp.textContent = avg+'%'; rp.style.color = rc;
+}
+
+// ═══════════════════════════════════════════
+// RENDER CHARTS
+// ═══════════════════════════════════════════
+const STATUS_META = {
+  'Done':        { c:'#3fb950' },
+  'In progress': { c:'#58a6ff' },
+  'Pending':     { c:'#d29922' },
+  'Not started': { c:'#6e7681' },
+  'Overdue':     { c:'#f78166' },
+};
+const PRIO_META = {
+  'Cao':   { c:'#f78166' },
+  'Thường':{ c:'#58a6ff' },
+  'Thấp':  { c:'#3fb950' },
+};
+
+function renderCharts(key, tasks) {
+  // Status bar
+  const sCnt = {};
+  tasks.forEach(t => sCnt[t.status] = (sCnt[t.status]||0)+1);
+  const maxS = Math.max(1,...Object.values(sCnt));
+  document.getElementById(key+'-status-chart').innerHTML =
+    Object.entries(sCnt).sort((a,b)=>b[1]-a[1]).map(([s,n]) => {
+      const m = STATUS_META[s]||{c:'#8b949e'};
+      return `<div class="bar-row">
+        <div class="bar-label">${s}</div>
+        <div class="bar-wrap"><div class="bar-fill" style="width:${Math.round(n/maxS*100)}%;background:${m.c}">${n}</div></div>
+        <div class="bar-cnt">${n}</div></div>`;
+    }).join('');
+
+  // Priority bar
+  const pCnt = {};
+  tasks.forEach(t => { if(t.priority) pCnt[t.priority]=(pCnt[t.priority]||0)+1; });
+  const maxP = Math.max(1,...Object.values(pCnt));
+  document.getElementById(key+'-prio-chart').innerHTML =
+    Object.entries(pCnt).sort((a,b)=>b[1]-a[1]).map(([p,n]) => {
+      const m = PRIO_META[p]||{c:'#8b949e'};
+      return `<div class="bar-row">
+        <div class="bar-label">${p}</div>
+        <div class="bar-wrap"><div class="bar-fill" style="width:${Math.round(n/maxP*100)}%;background:${m.c}">${n}</div></div>
+        <div class="bar-cnt">${n}</div></div>`;
+    }).join('');
+
+  // Ring legend
+  const total = tasks.length || 1;
+  document.getElementById(key+'-ring-legend').innerHTML =
+    Object.entries(sCnt).map(([s,n]) => {
+      const m = STATUS_META[s]||{c:'#8b949e'};
+      return `<div class="ring-item"><div class="ring-dot" style="background:${m.c}"></div>${s}: ${n}</div>`;
+    }).join('');
+}
+
+// ═══════════════════════════════════════════
+// RENDER TABLE
+// ═══════════════════════════════════════════
+function excelToStr(serial) {
+  if (!serial||isNaN(serial)) return '';
+  const d = new Date((serial-25569)*86400*1000);
+  return isNaN(d.getTime()) ? '' : d.toLocaleDateString('vi-VN',{day:'2-digit',month:'2-digit',year:'numeric'});
+}
+
+function sBadge(s) {
+  const m = {'Done':'done','In progress':'inprogress','Pending':'pending','Not started':'notstarted','Overdue':'overdue'};
+  return `<span class="badge b-${m[s]||'notstarted'}">${s||'—'}</span>`;
+}
+function pBadge(p) {
+  const m = {'Cao':'cao','Thường':'thuong','Thấp':'thuong'};
+  return p ? `<span class="badge b-${m[p]||'thuong'}">${p}</span>` : '<span style="color:var(--text-muted);font-size:.7rem">—</span>';
+}
+function pctBar(pct) {
+  const p = Math.round(pct*100);
+  const c = p>=80?'#3fb950':p>=40?'#d29922':'#f78166';
+  return `<div class="pct-bar"><div class="pct-track"><div class="pct-fill" style="width:${p}%;background:${c}"></div></div><div class="pct-txt">${p}%</div></div>`;
+}
+
+function renderTable(key, tasks) {
+  const label = key==='ts'?'Tiến sĩ':'Thạc sĩ';
+  document.getElementById(key+'-tbl-count').textContent = tasks.length+' công việc';
+  const tbody = document.getElementById(key+'-tbody');
+  const emptyEl = document.getElementById(key+'-empty');
+
+  if (!tasks.length && state[key].tasks.length === 0) {
+    tbody.innerHTML=''; emptyEl.style.display='block'; return;
+  }
+  if (!tasks.length) {
+    tbody.innerHTML='';
+    emptyEl.innerHTML='<div class="empty-icon">🔍</div><h3>Không tìm thấy kết quả</h3><p>Thử thay đổi bộ lọc hoặc từ khóa tìm kiếm.</p>';
+    emptyEl.style.display='block'; return;
+  }
+  emptyEl.style.display='none';
+
+  tbody.innerHTML = tasks.map(t => `<tr>
+    <td class="task-stt">${t.stt}</td>
+    <td><div class="task-name">${t.name}</div></td>
+    <td style="font-size:.7rem;color:var(--text-muted);max-width:140px">${t.group}</td>
+    <td style="white-space:nowrap;font-size:.72rem;color:${key==='ts'?'var(--ts-accent)':'var(--ths-accent)'}">${t.nhansu}</td>
+    <td>${pBadge(t.priority)}</td>
+    <td>${sBadge(t.status)}</td>
+    <td class="task-date">${t.start?excelToStr(t.start):'—'}</td>
+    <td class="task-date">${t.end?excelToStr(t.end):'—'}</td>
+    <td style="min-width:100px">${pctBar(t.pct)}</td>
+    <td style="text-align:center">${t.followup==='Yes'?'<span style="color:#f78166;font-size:.75rem">● Yes</span>':t.followup==='No'?'<span style="color:#6e7681;font-size:.75rem">○ No</span>':'—'}</td>
+    <td class="note-cell">${t.note||'—'}</td>
+  </tr>`).join('');
+}
+
+// ═══════════════════════════════════════════
+// TOAST
+// ═══════════════════════════════════════════
+function showToast(msg, type) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.className = 'toast show '+(type||'');
+  setTimeout(()=>el.className='toast', 3500);
+}
+
+// ═══════════════════════════════════════════
+// DRAG & DROP
+// ═══════════════════════════════════════════
+document.body.addEventListener('dragover', e => e.preventDefault());
+document.body.addEventListener('drop', e => {
+  e.preventDefault();
+  const f = e.dataTransfer.files[0];
+  if (f && (f.name.endsWith('.xlsx')||f.name.endsWith('.xls')))
+    handleFile({ target:{ files:[f] } });
+});
+</script>
+</body>
+</html>
