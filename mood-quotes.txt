@@ -1,0 +1,58 @@
+# File them cau noi cho goc thu gian trong index3.html
+# Moi dong co the viet theo 1 trong 2 cach:
+# 1) Chi viet cau quote:
+# Tiến độ không cần hoàn hảo mỗi ngày, chỉ cần không đứng yên.
+#
+# 2) Dinh dang day du:
+# loai|icon|noi dung|nguon tac gia|duong dan anh tuy chon
+#
+# loai nen dung: quote, humor, surprise
+# icon co the la emoji hoac alias ASCII:
+# coffee, target, calm, done, compass, fun, clip, calendar, idea, tea, note, plant, puzzle, sun
+# Neu muon hien anh nho, dien link anh o cot cuoi.
+
+quote|idea|Bạn chỉ được sống một lần duy nhất, nhưng nếu bạn sống đúng cách thì một lần là đủ.|Mae West|
+quote|sun|Đừng khóc vì một điều đã kết thúc, hãy mỉm cười vì nó đã từng xảy ra.|Dr. Seuss|
+quote|puzzle|Thật điên rồ khi cứ lặp đi lặp lại cùng một việc nhưng lại mong đợi những kết quả khác nhau.|Narcotics Anonymous|
+quote|compass|Đừng mãi chìm đắm trong những giấc mơ mà quên mất việc sống.|J.K. Rowling|
+quote|coffee|Những người bạn tốt, những cuốn sách hay và một lương tâm thanh thản – đó là cuộc sống lý tưởng.|Mark Twain|
+quote|idea|Đôi khi câu hỏi rất phức tạp nhưng câu trả lời lại vô cùng đơn giản.|Dr. Seuss|
+quote|calm|Thà bị tổn thương bởi sự thật còn hơn được an ủi bằng lời dối trá.|Khaled Hosseini|
+quote|target|Hãy học hỏi từ đối thủ nhưng đừng bao giờ sao chép. Sao chép là tự kết thúc chính mình.|Jack Ma|
+quote|compass|Cuộc sống giống như đi xe đạp. Muốn giữ thăng bằng, bạn phải tiếp tục tiến về phía trước.|Albert Einstein|
+quote|plant|Cuộc sống không phải là đi tìm chính mình mà là tạo nên chính mình.|George Bernard Shaw|
+quote|sun|Hãy hướng mắt lên các vì sao nhưng đừng quên giữ đôi chân trên mặt đất.|Theodore Roosevelt|
+quote|target|Người duy nhất bạn nên cố gắng vượt qua chính là phiên bản của bạn ngày hôm qua.|Khuyết danh|
+quote|calm|Hãy sống trọn vẹn với khoảnh khắc hiện tại.|Khuyết danh|
+quote|compass|Nếu muốn đi nhanh hãy đi một mình. Nếu muốn đi xa hãy đi cùng nhau.|Tục ngữ châu Phi|
+quote|idea|Đừng vội vàng. Những điều tốt đẹp nhất thường đến khi bạn ít mong đợi nhất.|Khuyết danh|
+quote|sun|Đối với thế giới, bạn chỉ là một người. Nhưng với một người nào đó, bạn có thể là cả thế giới.|Khuyết danh|
+quote|coffee|Điều tồi tệ nhất của nỗi nhớ là khi người ấy ở ngay bên cạnh nhưng bạn biết mình không thể thuộc về họ.|Gabriel García Márquez|
+quote|sun|Hãy luôn mỉm cười, vì bạn không bao giờ biết ai có thể yêu nụ cười ấy.|Gabriel García Márquez|
+quote|target|Đừng lãng phí thời gian cho người không sẵn lòng dành thời gian cho bạn.|Gabriel García Márquez|
+quote|plant|Nếu không thể làm những điều lớn lao, hãy làm những điều nhỏ bé bằng tình yêu lớn lao.|Mẹ Teresa|
+quote|done|Tình yêu lớn không phải là yêu nhiều người mà là yêu một người suốt đời.|Khuyết danh|
+quote|sun|Yêu ai đó là mong họ hạnh phúc, ngay cả khi hạnh phúc ấy không có bạn trong đó.|Khuyết danh|
+quote|idea|Tình bạn có thể phát triển thành tình yêu, nhưng tình yêu hiếm khi quay trở lại thành tình bạn.|Khuyết danh|
+quote|target|Cuộc sống không công bằng, hãy học cách thích nghi với điều đó.|Bill Gates|
+quote|sun|Đừng bao giờ từ bỏ. Hôm nay có thể khó khăn, ngày mai có thể còn tệ hơn, nhưng ngày kia ánh mặt trời sẽ xuất hiện.|Jack Ma|
+quote|compass|Cuộc sống chỉ có thể được thấu hiểu khi nhìn lại, nhưng phải được sống khi tiến về phía trước.|Soren Kierkegaard|
+quote|done|Tôi biết ơn những người từng từ chối tôi. Chính họ giúp tôi học cách tự làm mọi việc.|Albert Einstein|
+quote|target|Cách để bắt đầu là ngừng nói và bắt tay vào làm.|Walt Disney|
+quote|compass|Nơi nào có ý chí, nơi đó có con đường.|Pauline Kael|
+quote|target|Trên con đường thành công không có dấu chân của kẻ lười biếng.|Khuyết danh|
+quote|done|Tôi có thể chấp nhận thất bại, nhưng không thể chấp nhận việc không cố gắng.|Michael Jordan|
+quote|sun|Người chiến thắng không bao giờ ngừng cố gắng.|Tom Landry|
+quote|idea|Không có gì quá nhỏ để học hỏi và không có gì quá lớn để thử sức.|William Van Horne|
+quote|target|Hãy đặt mục tiêu và kiên trì cho đến khi đạt được nó.|Napoleon Hill|
+quote|compass|Hãy biết giới hạn của mình nhưng đừng ngừng mở rộng chúng.|Khuyết danh|
+quote|idea|Nếu bạn ngủ bây giờ, bạn sẽ mơ. Nếu bạn học bây giờ, bạn sẽ biến giấc mơ thành hiện thực.|Khuyết danh|
+quote|plant|Điều tuyệt vời nhất của tri thức là không ai có thể lấy nó khỏi bạn.|B.B. King|
+quote|compass|Hãy học từ quá khứ nếu bạn muốn định hình tương lai.|Confucius|
+quote|target|Đừng chỉ học xem thế giới đang làm gì, hãy học xem bạn có thể làm gì cho thế giới.|Khuyết danh|
+quote|sun|Một khi ngừng học hỏi, bạn bắt đầu già đi.|Albert Einstein|
+quote|idea|Đừng bao giờ ngừng học tập vì cuộc sống không bao giờ ngừng dạy dỗ.|Khuyết danh|
+quote|compass|Hãy sống như thể ngày mai bạn sẽ chết và học như thể bạn sẽ sống mãi mãi.|Mahatma Gandhi|
+quote|done|Những gì chúng ta học bằng niềm vui sẽ không bao giờ bị lãng quên.|Alfred Mercier|
+quote|plant|Học tập là kho báu sẽ theo chủ nhân của nó đến mọi nơi.|Tục ngữ Trung Hoa|
+quote|target|Thiên tài là 1% cảm hứng và 99% mồ hôi.|Thomas Edison|
