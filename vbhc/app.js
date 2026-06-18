@@ -48,7 +48,7 @@ const types = [
 
 const ids = [
   "docType", "docNo", "agencyCode", "urgency", "parentAgency", "issuingAgency",
-  "place", "issuedDate", "headerRatio", "pageOrientation", "summary", "attachedDocumentTitle", "issuingAuthority", "recipients", "basis", "bodyText",
+  "draftingCode", "place", "issuedDate", "headerRatio", "pageOrientation", "summary", "attachedDocumentTitle", "issuingAuthority", "recipients", "basis", "bodyText",
   "tableText", "tableAfterText",
   "signMode", "signTitle", "signName", "archiveLine", "copyTo"
 ];
@@ -88,8 +88,8 @@ const documentTemplates = {
     summary: "...",
     recipients: "...\n...",
     basis: "",
-    bodyText: "Nội dung công văn.\n... /.",
-    copyTo: "Như trên;\nLưu: VT.",
+    bodyText: "................................................................................................\n................................................................................................\n................................................................................................\n.............................................................................................. /.",
+    copyTo: "Như Điều ...;\nLưu: VT, ...",
     signTitle: "QUYỀN HẠN, CHỨC VỤ CỦA NGƯỜI KÝ"
   },
   "Công điện": {
@@ -395,7 +395,6 @@ function init() {
   if ($("templateBtn")) $("templateBtn").addEventListener("click", () => loadTemplateForCurrentType());
   $("saveBtn").addEventListener("click", saveDraft);
   $("exportBtn").addEventListener("click", exportWord);
-  $("printBtn").addEventListener("click", () => window.print());
   $("resetBtn").addEventListener("click", resetDraft);
   render();
 }
@@ -457,12 +456,25 @@ function blankIssuedDate() {
   return `ngày ${blankDayMonth} tháng ${blankDayMonth} năm ${blankYear}`;
 }
 
+function issuedDateText() {
+  return value("issuedDate") ? formatDate(value("issuedDate")) : blankIssuedDate();
+}
+
+function formattedDocNo() {
+  const number = value("docNo");
+  return number ? String(Number(number)).padStart(2, "0") : blankDocNo;
+}
+
 function docNumber() {
   const { abbr, hasTitle } = getType();
   const agency = value("agencyCode").toUpperCase();
-  if (!hasTitle) return `Số: ${blankDocNo}/${agency}`;
-  if (!abbr) return `Số: ${blankDocNo}/${agency}`;
-  return `Số: ${blankDocNo}/${abbr}-${agency}`;
+  if (value("docType") === "Công văn") {
+    const drafting = value("draftingCode").toUpperCase();
+    return `Số: ${formattedDocNo()}/${agency}${drafting ? `-${drafting}` : ""}`;
+  }
+  if (!hasTitle) return `Số: ${formattedDocNo()}/${agency}`;
+  if (!abbr) return `Số: ${formattedDocNo()}/${agency}`;
+  return `Số: ${formattedDocNo()}/${abbr}-${agency}`;
 }
 
 function renderParagraphs(target, text, italic = false) {
@@ -585,6 +597,8 @@ function renderRecipients() {
   const target = $("previewRecipients");
   const recipientLines = lines(value("recipients"));
   const isDispatchLike = ["Công văn", "Tờ trình", "Báo cáo"].includes(value("docType"));
+  const isOfficialLetter = value("docType") === "Công văn";
+  target.classList.toggle("official-letter-recipients", isOfficialLetter);
   $("recipientBlock").style.display = isDispatchLike ? "grid" : "none";
   if (!isDispatchLike || recipientLines.length === 0) {
     target.innerHTML = "";
@@ -620,7 +634,6 @@ function renderCopyTo() {
 
 function renderChecks() {
   const items = [];
-  const { hasTitle } = getType();
   const needsAuthority = hasIssuingAuthority();
   items.push(["ok", "A4 dọc"]);
   items.push(["ok", "Lề: 32 / 18 / 22mm"]);
@@ -630,7 +643,10 @@ function renderChecks() {
     items.push([value("issuingAuthority") ? "ok" : "warn", value("issuingAuthority") ? "Có thẩm quyền" : "Thiếu thẩm quyền"]);
   }
   items.push([value("signName") ? "ok" : "warn", value("signName") ? "Có người ký" : "Thiếu người ký"]);
-  items.push([!hasTitle || value("agencyCode") ? "ok" : "warn", "Ký hiệu"]);
+  items.push([value("agencyCode") ? "ok" : "warn", value("agencyCode") ? "Có ký hiệu cơ quan" : "Thiếu ký hiệu cơ quan"]);
+  if (value("docType") === "Công văn") {
+    items.push([value("draftingCode") ? "ok" : "warn", value("draftingCode") ? "Có mã đơn vị soạn thảo" : "Thiếu mã đơn vị soạn thảo"]);
+  }
   $("checks").innerHTML = items
     .map(([state, text]) => `<span class="check ${state}">${text}</span>`)
     .join("");
@@ -638,6 +654,7 @@ function renderChecks() {
 
 function render() {
   const { displayName, hasTitle } = getType();
+  const isOfficialLetter = value("docType") === "Công văn";
   const needsAuthority = hasIssuingAuthority();
   const command = commandLabel();
   const minutes = isMinutesDocument();
@@ -647,19 +664,21 @@ function render() {
   if (!hasTable) $("pageOrientation").value = "portrait";
   applyHeaderRatio();
   applyPageOrientation();
+  $("paper").classList.toggle("official-letter", isOfficialLetter);
   $("bodyTextBlock").style.display = hasTable ? "none" : "grid";
+  $("draftingCodeBlock").style.display = isOfficialLetter ? "grid" : "none";
   $("tableTextBlock").style.display = hasTable ? "grid" : "none";
   $("tableAfterBlock").style.display = hasTable ? "grid" : "none";
   $("pageOrientationBlock").style.display = hasTable ? "grid" : "none";
   $("previewParent").textContent = value("parentAgency").toUpperCase();
   $("previewAgency").textContent = value("issuingAgency").toUpperCase();
   $("previewNumber").textContent = docNumber();
-  $("previewDate").textContent = `${value("place") || "..."}, ${blankIssuedDate()}`;
+  $("previewDate").textContent = `${value("place") || "..."}, ${issuedDateText()}`;
   $("previewUrgency").innerHTML = value("urgency") ? `<span>${escapeHtml(value("urgency"))}</span>` : "";
 
   $("subjectBlock").style.display = hasTitle ? "block" : "none";
   $("subjectBlock").classList.toggle("table-template", Boolean(hasTable));
-  $("dispatchSubject").style.display = hasTitle ? "none" : "block";
+  $("previewDispatchSummary").style.display = isOfficialLetter ? "block" : "none";
   $("previewDocType").textContent = displayName;
   $("attachedBlock").style.display = isIndirectDecisionDocument() ? "grid" : "none";
   if (hasTable && currentTemplateTable().subjectHtml) {
@@ -676,13 +695,17 @@ function render() {
 
   renderRecipients();
   $("previewBasis").style.display = hasTable && currentTemplateTable().hideBasis ? "none" : "block";
-  renderParagraphs($("previewBasis"), value("basis"), true);
+  renderParagraphs($("previewBasis"), value("basis"), !isOfficialLetter);
   renderBodyContent();
   renderCopyTo();
 
   const signMode = value("signMode");
   const signTitle = value("signTitle").toUpperCase();
   $("previewSignMode").innerHTML = `${escapeHtml(signMode ? `${signMode} ${signTitle}` : signTitle)}`;
+  $("previewSignatureNote").textContent = isOfficialLetter
+    ? "(Chữ ký của người có thẩm quyền,\ndấu/chữ ký số của cơ quan, tổ chức)"
+    : "";
+  $("previewSignatureNote").style.display = isOfficialLetter ? "block" : "none";
   $("previewSignName").textContent = value("signName");
   $("previewMinutesSignatures").style.display = minutes ? "grid" : "none";
   $("previewHandoverSignatures").style.display = handover ? "grid" : "none";
@@ -692,7 +715,7 @@ function render() {
 }
 
 function headerRatio() {
-  const ratio = Number(value("headerRatio")) || 62;
+  const ratio = Number(value("headerRatio")) || 61;
   return Math.min(72, Math.max(52, ratio));
 }
 
@@ -834,6 +857,8 @@ function buildDocumentXml() {
   parts.push(docxHeaderTable());
   if (value("urgency")) {
     parts.push(paragraph(value("urgency"), { color: "B91C1C", bold: true, size: 26, spacingBefore: 120, spacingAfter: 80 }));
+  } else if (value("docType") === "Công văn") {
+    parts.push(paragraph("", { spacingAfter: 0, line: 680 }));
   } else {
     parts.push(paragraph("", { spacingAfter: 120 }));
   }
@@ -849,26 +874,45 @@ function buildDocumentXml() {
     if (needsAuthority && value("issuingAuthority")) {
       parts.push(paragraph(value("issuingAuthority").toUpperCase(), { align: "center", bold: true, size: 26, spacingAfter: 160 }));
     }
-  } else {
-    parts.push(paragraph(`V/v ${value("summary")}`, { align: "center", size: 24, spacingAfter: 180 }));
   }
 
   if (isDispatchLike && recipientLines.length > 0) {
+    const officialLetter = value("docType") === "Công văn";
+    const headingOptions = officialLetter
+      ? { size: 28, line: 324, indentLeft: 1724, spacingBefore: 454, spacingAfter: 0 }
+      : { size: 28, line: 324, spacingAfter: 0 };
+    const recipientIndent = officialLetter ? 2744 : 1440;
     if (recipientLines.length === 1) {
-      parts.push(paragraph(`Kính gửi: ${recipientLines[0].replace(/[.;]$/, "")}`, { size: 28, spacingAfter: 160 }));
+      parts.push(paragraph(
+        `Kính gửi: ${recipientLines[0].replace(/[.;]$/, "")}`,
+        { ...headingOptions, spacingAfter: 283 }
+      ));
     } else {
-      parts.push(paragraph("Kính gửi:", { size: 28, spacingAfter: 0 }));
+      parts.push(paragraph("Kính gửi:", headingOptions));
       recipientLines.forEach((line, index) => {
         const end = index === recipientLines.length - 1 ? "." : ";";
-        parts.push(paragraph(`- ${line.replace(/[.;]$/, "")}${end}`, { size: 28, indentLeft: 1440, spacingAfter: 0 }));
+        parts.push(paragraph(`- ${line.replace(/[.;]$/, "")}${end}`, {
+          size: 28,
+          line: 324,
+          indentLeft: recipientIndent,
+          spacingAfter: index === recipientLines.length - 1 && officialLetter ? 283 : 0
+        }));
       });
-      parts.push(paragraph("", { spacingAfter: 120 }));
+      if (!officialLetter) parts.push(paragraph("", { spacingAfter: 120 }));
     }
   }
 
   if (!tableTemplate?.hideBasis) {
+    const officialLetter = value("docType") === "Công văn";
     lines(value("basis")).forEach((line) => {
-      parts.push(paragraph(line, { italic: true, justify: true, firstLine: 567, size: 28, spacingAfter: 120 }));
+      parts.push(paragraph(line, {
+        italic: !officialLetter,
+        justify: true,
+        firstLine: 567,
+        size: 28,
+        line: 324,
+        spacingAfter: 120
+      }));
     });
   }
   if (command) {
@@ -883,6 +927,7 @@ function buildDocumentXml() {
   } else if (hideStandardSignature) {
     if (copyLines.length) parts.push(receiversOnly(copyLines));
   } else {
+    parts.push(paragraph("", { spacingAfter: 0, line: 680 }));
     parts.push(signatureTable(copyLines));
   }
   parts.push(sectionProperties());
@@ -894,7 +939,13 @@ function docxBodyContent() {
   const table = renderedTable();
   if (!table) {
     return lines(value("bodyText"))
-      .map((line) => docxBodyParagraph(line, { justify: true, firstLine: 567, size: 28, spacingAfter: 120 }))
+      .map((line) => docxBodyParagraph(line, {
+        justify: true,
+        firstLine: 567,
+        size: 28,
+        line: 324,
+        spacingAfter: 120
+      }))
       .join("");
   }
 
@@ -973,27 +1024,36 @@ function docxTableCell(text, options = {}) {
 }
 
 function docxHeaderTable() {
-  const totalWidth = contentWidthDxa();
+  const totalWidth = contentWidthDxa() - 100;
   const rightWidth = Math.round(totalWidth * headerRatio() / 100);
   const leftWidth = totalWidth - rightWidth;
   return `
     <w:tbl>
-      <w:tblPr><w:tblW w:w="${totalWidth}" w:type="dxa"/><w:tblBorders>${noBorderXml()}</w:tblBorders></w:tblPr>
+      <w:tblPr>
+        <w:tblW w:w="${totalWidth}" w:type="dxa"/>
+        <w:jc w:val="center"/>
+        <w:tblLayout w:type="fixed"/>
+        <w:tblBorders>${noBorderXml()}</w:tblBorders>
+        ${zeroCellMarginsXml()}
+      </w:tblPr>
       <w:tblGrid><w:gridCol w:w="${leftWidth}"/><w:gridCol w:w="${rightWidth}"/></w:tblGrid>
       <w:tr>
         <w:tc>
           <w:tcPr><w:tcW w:w="${leftWidth}" w:type="dxa"/></w:tcPr>
-          ${paragraph(value("parentAgency").toUpperCase(), { align: "center", size: 24, spacingAfter: 0 })}
-          ${paragraph(value("issuingAgency").toUpperCase(), { align: "center", bold: true, size: 24, spacingAfter: 0 })}
-          ${paragraph("_____________", { align: "center", size: 22, spacingAfter: 120 })}
-          ${paragraph(docNumber(), { align: "center", size: 26, spacingAfter: 0 })}
+          ${paragraph(value("parentAgency").toUpperCase(), { align: "center", size: 24, line: 240, spacingAfter: 0 })}
+          ${paragraph(value("issuingAgency").toUpperCase(), { align: "center", bold: true, size: 24, line: 240, spacingAfter: 0 })}
+          ${paragraph("_____________", { align: "center", size: 22, line: 240, spacingAfter: 120 })}
+          ${paragraph(docNumber(), { align: "center", size: 26, line: 240, spacingAfter: 0 })}
+          ${value("docType") === "Công văn"
+            ? paragraph(`V/v ${value("summary")}`, { align: "center", size: 24, line: 240, spacingBefore: 120, spacingAfter: 0 })
+            : ""}
         </w:tc>
         <w:tc>
           <w:tcPr><w:tcW w:w="${rightWidth}" w:type="dxa"/><w:noWrap/></w:tcPr>
-          ${paragraph("CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM", { align: "center", bold: true, size: 24, spacingAfter: 0 })}
-          ${paragraph("Độc lập - Tự do - Hạnh phúc", { align: "center", bold: true, size: 28, spacingAfter: 0 })}
-          ${paragraph("________________________", { align: "center", size: 22, spacingAfter: 120 })}
-          ${paragraph(`${value("place") || "..."}, ${blankIssuedDate()}`, { align: "center", italic: true, size: 26, spacingAfter: 0 })}
+          ${paragraph("CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM", { align: "center", bold: true, size: 24, line: 240, spacingAfter: 0 })}
+          ${paragraph("Độc lập - Tự do - Hạnh phúc", { align: "center", bold: true, size: 28, line: 240, spacingAfter: 0 })}
+          ${paragraph("________________________", { align: "center", size: 22, line: 240, spacingAfter: 120 })}
+          ${paragraph(`${value("place") || "..."}, ${issuedDateText()}`, { align: "center", italic: true, size: 26, line: 240, spacingAfter: 0 })}
         </w:tc>
       </w:tr>
     </w:tbl>`;
@@ -1067,16 +1127,28 @@ function signatureTable(copyLines) {
 
   return `
     <w:tbl>
-      <w:tblPr><w:tblW w:w="9071" w:type="dxa"/><w:tblBorders>${noBorderXml()}</w:tblBorders></w:tblPr>
-      <w:tblGrid><w:gridCol w:w="3990"/><w:gridCol w:w="4355"/></w:tblGrid>
+      <w:tblPr>
+        <w:tblW w:w="9000" w:type="dxa"/>
+        <w:jc w:val="center"/>
+        <w:tblLayout w:type="fixed"/>
+        <w:tblBorders>${noBorderXml()}</w:tblBorders>
+        ${zeroCellMarginsXml()}
+      </w:tblPr>
+      <w:tblGrid><w:gridCol w:w="4510"/><w:gridCol w:w="4490"/></w:tblGrid>
       <w:tr>
         <w:tc>
-          <w:tcPr><w:tcW w:w="3990" w:type="dxa"/></w:tcPr>
+          <w:tcPr><w:tcW w:w="4510" w:type="dxa"/></w:tcPr>
           ${receivers}
         </w:tc>
         <w:tc>
-          <w:tcPr><w:tcW w:w="4355" w:type="dxa"/></w:tcPr>
+          <w:tcPr><w:tcW w:w="4490" w:type="dxa"/></w:tcPr>
           ${paragraph(signLine, { align: "center", bold: true, size: 28, spacingAfter: 0 })}
+          ${value("docType") === "Công văn"
+            ? [
+                paragraph("(Chữ ký của người có thẩm quyền,", { align: "center", italic: true, size: 24, spacingAfter: 0 }),
+                paragraph("dấu/chữ ký số của cơ quan, tổ chức)", { align: "center", italic: true, size: 24, spacingAfter: 0 })
+              ].join("")
+            : ""}
           ${blankSignatureSpace()}
           ${paragraph(value("signName"), { align: "center", bold: true, size: 28, spacingAfter: 0 })}
         </w:tc>
@@ -1157,6 +1229,10 @@ function contentWidthDxa() {
 
 function noBorderXml() {
   return '<w:top w:val="nil"/><w:left w:val="nil"/><w:bottom w:val="nil"/><w:right w:val="nil"/><w:insideH w:val="nil"/><w:insideV w:val="nil"/>';
+}
+
+function zeroCellMarginsXml() {
+  return '<w:tblCellMar><w:top w:w="0" w:type="dxa"/><w:left w:w="0" w:type="dxa"/><w:bottom w:w="0" w:type="dxa"/><w:right w:w="0" w:type="dxa"/></w:tblCellMar>';
 }
 
 function singleBorderXml() {

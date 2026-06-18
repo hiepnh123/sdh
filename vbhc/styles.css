@@ -247,8 +247,9 @@ button:hover {
 
 .doc-top {
   display: grid;
-  grid-template-columns: 38% 62%;
-  gap: 6mm;
+  grid-template-columns: 39% 61%;
+  width: calc(100% - 2mm);
+  margin: 0 auto;
 }
 
 .agency-block,
@@ -340,6 +341,15 @@ button:hover {
   text-transform: none;
 }
 
+.dispatch-number-summary {
+  display: none;
+  margin-top: 2mm !important;
+  font-size: 12pt;
+  font-weight: 400;
+  line-height: 1.2;
+  text-transform: none;
+}
+
 .urgency-stamp {
   min-height: 12mm;
   padding-top: 4mm;
@@ -393,6 +403,20 @@ button:hover {
   padding-left: 25mm;
 }
 
+.paper.official-letter .to-block {
+  width: 62%;
+  margin-right: auto;
+  margin-left: auto;
+}
+
+.paper.official-letter .to-block > p {
+  text-align: left;
+}
+
+.paper.official-letter .to-block .to-list {
+  padding-left: 18mm;
+}
+
 .content-block {
   text-align: justify;
 }
@@ -400,6 +424,12 @@ button:hover {
 .content-block p {
   margin: 0 0 6pt;
   text-indent: 10mm;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+.content-block p strong:first-child {
+  white-space: nowrap;
 }
 
 .content-block.italic p {
@@ -454,9 +484,10 @@ button:hover {
 
 .signature-row {
   display: grid;
-  grid-template-columns: 44% 48%;
-  justify-content: space-between;
-  gap: 12mm;
+  grid-template-columns: 50% 50%;
+  width: calc(100% - 1.25mm);
+  margin-right: auto;
+  margin-left: auto;
   margin-top: 12mm;
 }
 
@@ -478,6 +509,16 @@ button:hover {
 
 .signature {
   font-size: 14pt;
+}
+
+.official-letter-signature-note {
+  display: none;
+  margin-top: 1mm !important;
+  font-size: 12pt;
+  font-weight: 400 !important;
+  font-style: italic;
+  line-height: 1.15;
+  white-space: pre-line;
 }
 
 .sign-space {

@@ -33,6 +33,10 @@
             Ký hiệu cơ quan
             <input id="agencyCode" value="ĐN">
           </label>
+          <label id="draftingCodeBlock">
+            Ký hiệu đơn vị soạn thảo
+            <input id="draftingCode" value="VP">
+          </label>
           <label>
             Mức khẩn
             <select id="urgency">
@@ -65,8 +69,8 @@
             <input id="issuedDate" type="date">
           </label>
           <label class="range-label">
-            <span>Tỷ lệ header (%) <strong id="headerRatioValue">62</strong></span>
-            <input id="headerRatio" type="range" min="52" max="72" value="62">
+            <span>Tỷ lệ header (%) <strong id="headerRatioValue">61</strong></span>
+            <input id="headerRatio" type="range" min="52" max="72" value="61">
           </label>
           <label id="pageOrientationBlock">
             Khổ giấy
@@ -161,7 +165,6 @@ Lưu: VT, VP.</textarea>
         <div class="toolbar-actions">
           <button id="saveBtn" type="button" title="Lưu bản nháp hiện tại vào trình duyệt này">Lưu bản nháp</button>
           <button id="exportBtn" type="button">Xuất DOCX</button>
-          <button id="printBtn" type="button">In / PDF</button>
         </div>
       </div>
 
@@ -172,6 +175,7 @@ Lưu: VT, VP.</textarea>
             <p class="bold" id="previewAgency"></p>
             <div class="short-line"></div>
             <p id="previewNumber"></p>
+            <p class="dispatch-number-summary" id="previewDispatchSummary"></p>
           </div>
           <div class="national-block">
             <p class="national-title">CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM</p>
@@ -187,10 +191,6 @@ Lưu: VT, VP.</textarea>
           <h2 id="previewDocType"></h2>
           <p id="previewSummary"></p>
           <div class="medium-line"></div>
-        </section>
-
-        <section class="dispatch-subject" id="dispatchSubject">
-          <p id="previewDispatchSummary"></p>
         </section>
 
         <section class="authority-preview" id="previewAuthority"></section>
@@ -236,6 +236,7 @@ Lưu: VT, VP.</textarea>
           </div>
           <div class="signature">
             <p id="previewSignMode"></p>
+            <p class="signature-note official-letter-signature-note" id="previewSignatureNote"></p>
             <div class="sign-space"></div>
             <p class="sign-name" id="previewSignName"></p>
           </div>
